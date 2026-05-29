@@ -1,0 +1,3378 @@
+version: 1
+properties:
+  - key: port
+    type: number
+    description: HTTP(S) 代理监听端口
+    default: 7890
+    rules: &a1
+      - kind: range
+        min: 1
+        max: 65535
+  - key: socks-port
+    type: number
+    description: SOCKS5 代理监听端口
+    default: 7891
+    rules: *a1
+  - key: mixed-port
+    type: number
+    description: HTTP(S) 与 SOCKS 混合代理端口
+    default: 10801
+    rules: *a1
+  - key: redir-port
+    type: number
+    description: 透明代理端口（Linux / macOS）
+    default: 7892
+    rules: *a1
+  - key: tproxy-port
+    type: number
+    description: TProxy 透明代理端口（Linux）
+    default: 7893
+    rules: *a1
+  - key: allow-lan
+    type: boolean
+    description: 是否允许局域网设备连接代理
+    default: true
+  - key: bind-address
+    type: string
+    description: 允许局域网时绑定的监听地址
+    default: "*"
+  - key: authentication
+    type: array
+    items:
+      type: string
+    description: HTTP(S)/SOCKS/Mixed 代理的用户名密码认证
+    default:
+      - username:password
+  - key: skip-auth-prefixes
+    type: array
+    items:
+      type: string
+    description: 允许跳过代理认证的 IP 段
+    default:
+      - 127.0.0.1/8
+      - ::1/128
+  - key: lan-allowed-ips
+    type: array
+    items:
+      type: string
+    description: 允许连接的 IP 段（allow-lan 为 true 时生效）
+    default:
+      - 0.0.0.0/0
+      - ::/0
+  - key: lan-disallowed-ips
+    type: array
+    items:
+      type: string
+    description: 禁止连接的 IP 段（优先级高于白名单）
+    default:
+      - 192.168.0.3/32
+  - key: find-process-mode
+    type: string
+    description: 进程匹配模式（always / strict / off）
+    default: strict
+    enum:
+      - always
+      - strict
+      - off
+  - key: mode
+    type: string
+    description: 运行模式（rule 规则 / global 全局 / direct 直连）
+    default: rule
+    enum:
+      - rule
+      - global
+      - direct
+  - key: log-level
+    type: string
+    description: 内核日志输出级别
+    default: debug
+    enum:
+      - silent
+      - error
+      - warning
+      - info
+      - debug
+  - key: ipv6
+    type: boolean
+    description: 是否允许内核处理 IPv6 流量
+    default: true
+  - key: geox-url
+    type: object
+    properties:
+      - key: geoip
+        type: string
+        description: GeoIP 数据文件下载地址
+        default: https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat
+      - key: geosite
+        type: string
+        description: GeoSite 数据文件下载地址
+        default: https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat
+      - key: mmdb
+        type: string
+        description: GeoIP MMDB 数据文件下载地址
+        default: https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb
+    description: 自定义 GeoIP / GeoSite / MMDB 下载地址
+    default:
+      geoip: https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat
+      geosite: https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat
+      mmdb: https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb
+  - key: geo-auto-update
+    type: boolean
+    description: 是否自动更新 Geo 数据
+    default: false
+  - key: geo-update-interval
+    type: number
+    description: Geo 数据自动更新间隔（小时）
+    default: 24
+  - key: geosite-matcher
+    type: string
+    description: GeoSite 匹配器实现（succinct / mph）
+    default: succinct
+    enum:
+      - succinct
+      - mph
+  - key: geodata-mode
+    type: boolean
+    description: GeoIP 数据格式（true 为 dat，false 为 mmdb）
+    default: false
+  - key: tls
+    type: object
+    properties:
+      - key: certificate
+        type: string
+        description: TLS 证书（PEM 内容或文件路径）
+        default: string
+      - key: private-key
+        type: string
+        description: TLS 私钥（PEM 内容或文件路径）
+        default: string
+      - key: client-auth-type
+        type: string
+        description: TLS 客户端证书校验类型
+        default: ""
+      - key: client-auth-cert
+        type: string
+        description: TLS 客户端证书
+        default: string
+      - key: ech-key
+        type: string
+        description: TLS ECH 密钥（填写后启用 ECH）
+        default: ""
+      - key: custom-certifactes
+        type: array
+        items:
+          type: string
+        description: 额外信任的 TLS 证书列表
+        default:
+          - |
+            -----BEGIN CERTIFICATE-----
+            format/pem...
+            -----END CERTIFICATE-----
+    description: RESTful API HTTPS 使用的 TLS 配置
+    default:
+      certificate: string
+      private-key: string
+      custom-certifactes:
+        - |
+          -----BEGIN CERTIFICATE-----
+          format/pem...
+          -----END CERTIFICATE-----
+  - key: external-controller
+    type: string
+    description: RESTful API 监听地址
+    default: 0.0.0.0:9093
+    rules: *a1
+  - key: external-controller-tls
+    type: string
+    description: RESTful API HTTPS 监听地址
+    default: 0.0.0.0:9443
+    rules: *a1
+  - key: secret
+    type: string
+    description: RESTful API 访问密钥
+    default: "123456"
+  - key: external-controller-cors
+    type: object
+    properties:
+      - key: allow-origins
+        type: array
+        items:
+          type: string
+        description: CORS 允许的 Origin 列表
+        default:
+          - "*"
+      - key: allow-private-network
+        type: boolean
+        description: 是否允许私有网络访问 CORS
+        default: true
+    description: RESTful API 的 CORS 配置
+    default:
+      allow-origins:
+        - "*"
+      allow-private-network: true
+  - key: external-controller-unix
+    type: string
+    description: RESTful API Unix Socket 监听地址
+    default: mihomo.sock
+  - key: external-controller-pipe
+    type: string
+    description: RESTful API Windows 命名管道地址
+    default: \\.\pipe\mihomo
+  - key: external-doh-server
+    type: string
+    description: 在 API 端口上提供的 DoH 服务路径
+    default: /dns-query
+  - key: external-ui
+    type: string
+    description: 外部 Web UI 静态资源目录
+    default: /path/to/ui/folder/
+  - key: external-ui-name
+    type: string
+    description: 外部 Web UI 子目录名称
+    default: xd
+  - key: external-ui-url
+    type: string
+    description: 自定义外部用户界面下载地址
+    default: https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip
+  - key: tcp-concurrent
+    type: boolean
+    description: 启用 TCP 并发连接（使用 DNS 解析出的全部 IP）
+    default: true
+  - key: unified-delay
+    type: boolean
+    description: 统一延迟测速（消除不同节点握手差异）
+    default: false
+  - key: interface-name
+    type: string
+    description: 出站流量使用的网卡名称
+    default: en0
+  - key: routing-mark
+    type: number
+    description: Linux 出站连接的 fwmark 标记
+    default: 6666
+  - key: disable-keep-alive
+    type: boolean
+    description: 是否禁用 TCP Keep Alive
+    default: false
+  - key: keep-alive-idle
+    type: number
+    description: TCP Keep Alive 最大空闲时间（秒）
+    default: 15
+  - key: keep-alive-interval
+    type: number
+    description: TCP Keep Alive 探测间隔（秒）
+    default: 15
+  - key: global-client-fingerprint
+    type: string
+    description: 全局 TLS 客户端指纹（已弃用，建议在代理节点配置）
+    default: chrome
+    enum:
+      - chrome
+      - firefox
+      - safari
+      - ios
+      - random
+      - none
+  - key: profile
+    type: object
+    properties:
+      - key: store-selected
+        type: boolean
+        description: 是否保存策略组选择状态
+        default: false
+        enum:
+          - true
+          - false
+      - key: store-fake-ip
+        type: boolean
+        description: 是否保存 Fake-IP 映射表
+        default: true
+        enum:
+          - true
+          - false
+    description: 配置持久化选项
+    default:
+      store-selected: false
+      store-fake-ip: true
+  - key: hosts
+    type: "null"
+    description: 静态 Hosts 映射（类似 /etc/hosts）
+    default: null
+  - key: experimental
+    type: object
+    properties:
+      - key: quic-go-disable-gso
+        type: boolean
+        description: 禁用 QUIC-go 的 GSO 优化
+        default: true
+    description: 实验性选项
+    default: null
+  - key: tun
+    type: object
+    properties:
+      - key: enable
+        type: boolean
+        description: 是否启用 TUN
+        default: false
+      - key: stack
+        type: string
+        description: TUN 协议栈（system / gvisor / mixed）
+        default: system
+        enum:
+          - system
+          - gvisor
+          - mixed
+      - key: mtu
+        type: number
+        description: TUN 最大传输单元
+        default: 9000
+      - key: gso
+        type: boolean
+        description: 是否启用 GSO（仅 Linux）
+        default: false
+      - key: gso-max-size
+        type: number
+        description: GSO 数据块最大长度
+        default: 65536
+      - key: dns-hijack
+        type: array
+        items:
+          type: string
+        description: DNS 劫持地址列表
+        default:
+          - 0.0.0.0:53
+      - key: auto-route
+        type: boolean
+        description: 是否自动设置全局路由
+        default: true
+      - key: auto-redirect
+        type: boolean
+        description: 是否自动重定向 TCP（Linux，需 auto-route）
+        default: false
+      - key: auto-detect-interface
+        type: boolean
+        description: 是否自动检测出站网卡
+        default: true
+      - key: strict-route
+        type: boolean
+        description: 启用 auto-route 时的严格路由
+        default: true
+      - key: endpoint-independent-nat
+        type: boolean
+        description: 是否启用独立于端点的 NAT
+        default: false
+      - key: route-address
+        type: array
+        items:
+          type: string
+        description: auto-route 时自定义路由网段
+        default:
+          - 0.0.0.0/1
+          - 128.0.0.0/1
+          - ::/1
+          - 8000::/1
+      - key: route-address-set
+        type: array
+        items:
+          type: string
+        description: 加入防火墙的路由规则集（不命中则绕过）
+        default:
+          - ruleset-1
+          - ruleset-2
+      - key: route-exclude-address-set
+        type: array
+        items:
+          type: string
+        description: 加入防火墙的排除规则集（命中则绕过）
+        default:
+          - ruleset-3
+          - ruleset-4
+      - key: disable-icmp-forwarding
+        type: boolean
+        description: 是否禁用 ICMP 转发
+        default: true
+    description: TUN 虚拟网卡入站
+    default:
+      enable: false
+      stack: system
+      dns-hijack:
+        - 0.0.0.0:53
+      auto-redirect: false
+      route-address-set:
+        - ruleset-1
+        - ruleset-2
+      route-exclude-address-set:
+        - ruleset-3
+        - ruleset-4
+      route-address:
+        - 0.0.0.0/1
+        - 128.0.0.0/1
+        - ::/1
+        - 8000::/1
+  - key: sniffer
+    type: object
+    properties:
+      - key: enable
+        type: boolean
+        description: 是否启用域名嗅探
+        default: false
+      - key: force-dns-mapping
+        type: boolean
+        description: 对 redir-host 流量强制嗅探
+        default: false
+      - key: parse-pure-ip
+        type: boolean
+        description: 对未获取域名的流量强制嗅探
+        default: false
+      - key: override-destination
+        type: boolean
+        description: 是否用嗅探结果作为实际访问目标
+        default: false
+      - key: sniff
+        type: object
+        properties:
+          - key: QUIC
+            type: "null"
+            default: null
+          - key: ports
+            type: array
+            items:
+              type: number
+            default:
+              - 443
+          - key: TLS
+            type: "null"
+            default: null
+          - key: HTTP
+            type: object
+            properties:
+              - key: ports
+                type: array
+                items:
+                  type: number
+                default:
+                  - 80
+                  - 8080-8880
+              - key: override-destination
+                type: boolean
+                default: true
+                description: 是否覆盖连接目标
+            default:
+              ports:
+                - 80
+                - 8080-8880
+              override-destination: true
+        default:
+          QUIC: null
+          TLS: null
+          HTTP:
+            ports:
+              - 80
+              - 8080-8880
+            override-destination: true
+        description: 按协议的嗅探配置
+      - key: force-domain
+        type: array
+        items:
+          type: string
+        description: 强制嗅探的域名列表
+        default:
+          - +.v2ex.com
+      - key: port-whitelist
+        type: array
+        items:
+          type: string
+        default:
+          - "80"
+          - "443"
+      - key: sniffing
+        type: array
+        items:
+          type: string
+        default:
+          - tls
+          - http
+    description: 域名嗅探配置
+    default:
+      enable: false
+      override-destination: false
+      sniff:
+        QUIC: null
+        TLS: null
+        HTTP:
+          ports:
+            - 80
+            - 8080-8880
+          override-destination: true
+      force-domain:
+        - +.v2ex.com
+      sniffing:
+        - tls
+        - http
+      port-whitelist:
+        - "80"
+        - "443"
+  - key: dns
+    type: object
+    properties:
+      - key: enable
+        type: boolean
+        description: 是否启用内置 DNS（关闭则使用系统 DNS）
+        default: false
+      - key: cache-algorithm
+        type: string
+        description: DNS 缓存算法（lru / arc）
+        default: arc
+        enum:
+          - lru
+          - arc
+      - key: prefer-h3
+        type: boolean
+        description: DoH 是否优先使用 HTTP/3
+        default: false
+      - key: use-hosts
+        type: boolean
+        description: 是否使用配置中的 hosts 回应
+        default: true
+      - key: respect-rules
+        type: boolean
+        description: DNS 连接是否遵守路由规则
+        default: false
+      - key: listen
+        type: string
+        description: DNS 服务监听地址
+        default: 0.0.0.0:53
+      - key: ipv6
+        type: boolean
+        description: DNS 是否解析并回应 AAAA
+        default: false
+      - key: ipv6-timeout
+        type: number
+        description: IPv6 DNS 解析超时（秒）
+        default: 300
+      - key: default-nameserver
+        type: array
+        items:
+          type: string
+        description: 用于解析 DNS 服务器域名的 DNS（须为 IP）
+        default:
+          - system
+          - 8.8.8.8
+          - tls://1.12.12.12:853
+          - tls://223.5.5.5:853
+          - system
+      - key: enhanced-mode
+        type: string
+        description: DNS 处理模式（fake-ip / redir-host）
+        default: fake-ip
+        enum:
+          - fake-ip
+          - redir-host
+          - mapping
+      - key: fake-ip-range
+        type: string
+        description: Fake-IP IPv4 地址池
+        default: 198.18.0.1/16
+      - key: fake-ip-range6
+        type: string
+        description: Fake-IP IPv6 地址池
+        default: fdfe:dcba:9876::1/64
+      - key: fake-ip-filter
+        type: array
+        items:
+          type: string
+        description: 不使用 Fake-IP 的域名或规则
+        default:
+          - "*.lan"
+          - localhost.ptlogin2.qq.com
+          - rule-set:fakeip-filter
+          - geosite:fakeip-filter
+          - RULE-SET,reject-domain,fake-ip
+          - RULE-SET,proxy-domain,fake-ip
+          - GEOSITE,gfw,fake-ip
+          - DOMAIN,www.baidu.com,real-ip
+          - DOMAIN-SUFFIX,qq.com,real-ip
+          - DOMAIN-SUFFIX,jd.com,fake-ip
+          - MATCH,fake-ip
+      - key: fake-ip-filter-mode
+        type: string
+        description: Fake-IP 过滤模式（blacklist / whitelist / rule）
+        default: blacklist
+        enum:
+          - blacklist
+          - whitelist
+          - rule
+      - key: fake-ip-ttl
+        type: number
+        description: Fake-IP 查询结果的 TTL
+        default: 1
+      - key: nameserver-policy
+        type: object
+        properties:
+          - key: geosite:category-ads-all
+            type: string
+            default: rcode://success
+          - key: geosite:cn,private,apple
+            type: array
+            items:
+              type: string
+            default:
+              - https://doh.pub/dns-query
+              - https://dns.alidns.com/dns-query
+          - key: www
+            type: object
+            properties:
+              - key: baidu
+                type: object
+                properties:
+                  - key: com,+
+                    type: object
+                    properties:
+                      - key: google
+                        type: object
+                        properties:
+                          - key: cn
+                            type: array
+                            items:
+                              type: string
+                            default:
+                              - 223.5.5.5
+                              - https://dns.alidns.com/dns-query
+        description: 指定域名使用的 DNS 服务器
+        default:
+          geosite:cn,private,apple:
+            - https://doh.pub/dns-query
+            - https://dns.alidns.com/dns-query
+          geosite:category-ads-all: rcode://success
+          www.baidu.com,+.google.cn:
+            - 223.5.5.5
+            - https://dns.alidns.com/dns-query
+      - key: nameserver
+        type: array
+        items:
+          type: string
+        description: 默认域名解析服务器列表
+        default:
+          - 8.8.8.8
+          - 8.8.8.8
+          - tls://223.5.5.5:853
+          - https://doh.pub/dns-query
+          - https://dns.alidns.com/dns-query#h3=true
+          - https://mozilla.cloudflare-dns.com/dns-query#DNS&h3=true
+          - dhcp://en0
+          - quic://dns.adguard.com:784
+      - key: fallback
+        type: array
+        items:
+          type: string
+        description: 后备域名解析服务器（通常用于境外 DNS）
+        default:
+          - https://dns.google/dns-query
+          - https://cloudflare-dns.com/dns-query
+          - 1.1.1.1
+          - 8.8.8.8
+      - key: fallback-filter
+        type: object
+        properties:
+          - key: geoip
+            type: boolean
+            description: 是否用 GeoIP 判断污染
+            default: true
+          - key: geoip-code
+            type: string
+            description: 视为可信的国家代码
+            default: CN
+          - key: geosite
+            type: array
+            items:
+              type: string
+            description: 视为污染的 GeoSite 列表
+            default:
+              - gfw
+          - key: ipcidr
+            type: array
+            items:
+              type: string
+            description: 视为污染的 IP 段
+            default:
+              - 240.0.0.0/4
+          - key: domain
+            type: array
+            items:
+              type: string
+            description: 视为污染的域名列表
+            default:
+              - +.google.com
+              - +.facebook.com
+              - +.youtube.com
+        description: 后备 DNS 结果筛选条件
+        default:
+          geoip: true
+          geoip-code: CN
+          geosite:
+            - gfw
+          ipcidr:
+            - 240.0.0.0/4
+          domain:
+            - +.google.com
+            - +.facebook.com
+            - +.youtube.com
+      - key: proxy-server-nameserver
+        type: array
+        items:
+          type: string
+        description: 仅用于解析代理节点域名的 DNS
+        default:
+          - https://doh.pub/dns-query
+          - https://dns.alidns.com/dns-query
+          - 119.29.29.29
+          - 223.5.5.5
+      - key: direct-nameserver-follow-policy
+        type: boolean
+        description: 直连 DNS 是否遵守 nameserver-policy
+        default: false
+      - key: geoip
+        type: boolean
+        description: DNS 模块内 GeoIP 开关（fallback-filter 子项）
+        default: true
+      - key: geoip-code
+        type: string
+        description: DNS 模块内 GeoIP 国家代码
+        default: CN
+    description: DNS 模块配置
+    default:
+      cache-algorithm: arc
+      enable: false
+      prefer-h3: false
+      listen: 0.0.0.0:53
+      default-nameserver:
+        - 114.114.114.114
+        - 8.8.8.8
+        - tls://1.12.12.12:853
+        - tls://223.5.5.5:853
+        - system
+      enhanced-mode: fake-ip
+      fake-ip-range: 198.18.0.1/16
+      fake-ip-filter:
+        - "*.lan"
+        - localhost.ptlogin2.qq.com
+        - rule-set:fakeip-filter
+        - geosite:fakeip-filter
+        - RULE-SET,reject-domain,fake-ip
+        - RULE-SET,proxy-domain,fake-ip
+        - GEOSITE,gfw,fake-ip
+        - DOMAIN,www.baidu.com,real-ip
+        - DOMAIN-SUFFIX,qq.com,real-ip
+        - DOMAIN-SUFFIX,jd.com,fake-ip
+        - MATCH,fake-ip
+      fake-ip-filter-mode: blacklist
+      fake-ip-ttl: 1
+      respect-rules: false
+      nameserver:
+        - 114.114.114.114
+        - 8.8.8.8
+        - tls://223.5.5.5:853
+        - https://doh.pub/dns-query
+        - https://dns.alidns.com/dns-query#h3=true
+        - https://mozilla.cloudflare-dns.com/dns-query#DNS&h3=true
+        - dhcp://en0
+        - quic://dns.adguard.com:784
+      nameserver-policy:
+        geosite:cn,private,apple:
+          - https://doh.pub/dns-query
+          - https://dns.alidns.com/dns-query
+        geosite:category-ads-all: rcode://success
+        www.baidu.com,+.google.cn:
+          - 223.5.5.5
+          - https://dns.alidns.com/dns-query
+  - key: ntp
+    type: object
+    properties:
+      - key: enable
+        type: boolean
+        description: 是否启用 NTP 服务
+        default: true
+      - key: write-to-system
+        type: boolean
+        description: 是否同步至系统时间（需 root 或管理员权限）
+        default: true
+      - key: server
+        type: string
+        description: NTP 服务地址
+        default: time.apple.com
+      - key: port
+        type: number
+        description: NTP 服务端口
+        default: 123
+        rules: *a1
+      - key: interval
+        type: number
+        description: 同步时间间隔（分钟）
+        default: 30
+    description: NTP 时间同步配置
+    default:
+      enable: true
+      write-to-system: true
+      server: time.apple.com
+      port: 123
+      interval: 30
+  - key: proxies
+    type: array
+    items:
+      type: object
+      properties:
+        - key: type
+          type: string
+          default: ss
+          description: 类型
+        - key: server
+          type: string
+          default: ""
+          description: 服务器地址
+        - key: port
+          type: number
+          default: 443
+          rules: *a1
+          description: 端口
+        - key: username
+          type: string
+          default: username
+        - key: password
+          type: string
+          default: password
+          description: 密码
+        - key: tls
+          type: boolean
+          default: true
+          description: 是否启用 TLS
+        - key: fingerprint
+          type: string
+          default: xxxx
+          description: TLS 指纹
+        - key: certificate
+          type: string
+          default: ./client.crt
+          description: 证书
+        - key: private-key
+          type: string
+          default: ./client.key
+          description: 私钥
+        - key: skip-cert-verify
+          type: boolean
+          default: true
+          description: 是否跳过 TLS 证书验证
+        - key: udp
+          type: boolean
+          default: true
+          description: 是否启用 UDP
+        - key: ip-version
+          type: string
+          default: ipv6
+          description: IP 版本偏好
+        - key: sni
+          type: string
+          default: custom.com
+          description: TLS SNI
+        - key: psk
+          type: string
+          default: yourpsk
+        - key: version
+          type: number
+          default: 2
+        - key: mode
+          type: string
+          default: http
+        - key: host
+          type: string
+          default: bing.com
+        - key: cipher
+          type: string
+          default: chacha20-ietf-poly1305
+          description: 加密方式
+        - key: udp-over-tcp
+          type: boolean
+          default: false
+          description: 是否使用 UDP over TCP
+        - key: smux
+          type: object
+          default: {}
+          properties:
+            - key: enabled
+              type: boolean
+              default: false
+            - key: protocol
+              type: string
+              default: smux
+            - key: max-connections
+              type: number
+              default: 4
+            - key: min-streams
+              type: number
+              default: 4
+            - key: max-streams
+              type: number
+              default: 0
+            - key: padding
+              type: boolean
+              default: false
+            - key: statistic
+              type: boolean
+              default: false
+            - key: only-tcp
+              type: boolean
+              default: false
+        - key: plugin
+          type: string
+          default: obfs
+          description: 插件
+        - key: plugin-opts
+          type: object
+          default: {}
+          properties:
+            - key: mode
+              type: string
+              default: tls
+            - key: host
+              type: string
+              default: bing.com
+            - key: tls
+              type: boolean
+              default: true
+              description: 是否启用 TLS
+            - key: fingerprint
+              type: string
+              default: xxxx
+              description: TLS 指纹
+            - key: certificate
+              type: string
+              default: ./client.crt
+              description: 证书
+            - key: private-key
+              type: string
+              default: ./client.key
+              description: 私钥
+            - key: enable
+              type: boolean
+              default: true
+              description: 是否启用
+            - key: config
+              type: string
+              default: AEn+DQBFKwAgACABWIHUGj4u+PIggYXcR5JF0gYk3dCRioBW8uJq9H4mKAAIAAEAAQABAANAEnB1YmxpYy50bHMtZWNoLmRldgAA
+            - key: skip-cert-verify
+              type: boolean
+              default: true
+              description: 是否跳过 TLS 证书验证
+            - key: path
+              type: string
+              default: /
+              description: 本地规则集路径
+            - key: mux
+              type: boolean
+              default: true
+            - key: custom
+              type: string
+              default: value
+            - key: v2ray-http-upgrade
+              type: boolean
+              default: false
+            - key: v2ray-http-upgrade-fast-open
+              type: boolean
+              default: false
+            - key: password
+              type: string
+              default: shadow_tls_password
+              description: 密码
+            - key: version
+              type: number
+              default: 2
+            - key: alpn
+              type: array
+              items:
+                type: string
+              default:
+                - h2
+                - http/1.1
+              description: TLS ALPN 列表
+            - key: version-hint
+              type: string
+              default: tls13
+            - key: restls-script
+              type: string
+              default: 300?100<1,400~100,350~100,600~100,300~200,300~100
+            - key: key
+              type: string
+              default: it's a secrect
+            - key: crypt
+              type: string
+              default: aes
+            - key: conn
+              type: number
+              default: 1
+            - key: autoexpire
+              type: number
+              default: 0
+            - key: scavengettl
+              type: number
+              default: 600
+            - key: mtu
+              type: number
+              default: 1350
+            - key: ratelimit
+              type: number
+              default: 0
+            - key: sndwnd
+              type: number
+              default: 128
+            - key: rcvwnd
+              type: number
+              default: 512
+            - key: datashard
+              type: number
+              default: 10
+            - key: parityshard
+              type: number
+              default: 3
+            - key: dscp
+              type: number
+              default: 0
+            - key: nocomp
+              type: boolean
+              default: false
+            - key: acknodelay
+              type: boolean
+              default: false
+            - key: nodelay
+              type: number
+              default: 0
+            - key: interval
+              type: number
+              default: 50
+              description: 更新间隔（秒）
+            - key: resend
+              type: number
+              default: 0
+            - key: sockbuf
+              type: number
+              default: 4194304
+            - key: smuxver
+              type: number
+              default: 1
+            - key: smuxbuf
+              type: number
+              default: 4194304
+            - key: framesize
+              type: number
+              default: 8192
+            - key: streambuf
+              type: number
+              default: 2097152
+            - key: keepalive
+              type: number
+              default: 10
+        - key: client-fingerprint
+          type: string
+          default: chrome
+          description: TLS 客户端指纹
+        - key: mux
+          type: boolean
+          default: true
+        - key: dialer-proxy
+          type: string
+          default: gost-relay-hop
+          description: 发起连接使用的代理
+        - key: forward
+          type: boolean
+          default: true
+        - key: uuid
+          type: string
+          default: ""
+          description: 用户 ID
+        - key: alterId
+          type: number
+          default: 32
+        - key: servername
+          type: string
+          default: example.com
+        - key: network
+          type: string
+          default: ws
+          description: 传输协议
+        - key: enable
+          type: boolean
+          default: true
+          description: 是否启用
+        - key: config
+          type: string
+          default: AEn+DQBFKwAgACABWIHUGj4u+PIggYXcR5JF0gYk3dCRioBW8uJq9H4mKAAIAAEAAQABAANAEnB1YmxpYy50bHMtZWNoLmRldgAA
+        - key: path
+          type: string
+          default: /path
+          description: 本地规则集路径
+        - key: Host
+          type: string
+          default: v2ray.com
+        - key: max-early-data
+          type: number
+          default: 2048
+        - key: early-data-header-name
+          type: string
+          default: Sec-WebSocket-Protocol
+        - key: v2ray-http-upgrade
+          type: boolean
+          default: false
+        - key: v2ray-http-upgrade-fast-open
+          type: boolean
+          default: false
+        - key: h2-opts
+          type: object
+          default: {}
+          properties:
+            - key: host
+              type: object
+              properties: []
+              default: {}
+            - key: path
+              type: string
+              default: /
+              description: 本地规则集路径
+          description: HTTP/2 选项
+        - key: method
+          type: string
+          default: GET
+        - key: grpc-opts
+          type: object
+          default: {}
+          properties:
+            - key: grpc-service-name
+              type: string
+              default: example
+            - key: grpc-user-agent
+              type: string
+              default: grpc-go/1.36.0
+            - key: ping-interval
+              type: number
+              default: 0
+            - key: max-connections
+              type: number
+              default: 1
+            - key: min-streams
+              type: number
+              default: 0
+            - key: max-streams
+              type: number
+              default: 0
+          description: gRPC 选项
+        - key: flow
+          type: string
+          default: xtls-rprx-vision
+        - key: encryption
+          type: string
+          default: mlkem768x25519plus.native/xorpub/random.1rtt/0rtt.(padding len).(padding gap).(X25519 Password).(ML-KEM-768 Client)...
+        - key: reality-opts
+          type: object
+          default: {}
+          properties:
+            - key: public-key
+              type: string
+              default: xxx
+            - key: short-id
+              type: string
+              default: xxx
+            - key: support-x25519mlkem768
+              type: boolean
+              default: false
+              description: 是否启用 x25519mlkem768 密钥交换
+          description: REALITY 选项
+        - key: ws-opts
+          type: object
+          default: {}
+          properties:
+            - key: path
+              type: string
+              default: /
+              description: 本地规则集路径
+            - key: headers
+              type: object
+              properties:
+                - key: Host
+                  type: string
+                  default: example.com
+              default: {}
+            - key: v2ray-http-upgrade
+              type: boolean
+              default: false
+            - key: v2ray-http-upgrade-fast-open
+              type: boolean
+              default: false
+          description: WebSocket 选项
+        - key: alpn
+          type: array
+          default:
+            - h2
+          items:
+            type: string
+          description: TLS ALPN 列表
+        - key: ech-opts
+          type: "null"
+          default: null
+          description: ECH 选项
+        - key: xhttp-opts
+          type: object
+          default: {}
+          properties:
+            - key: path
+              type: string
+              default: /
+              description: 本地规则集路径
+            - key: host
+              type: string
+              default: xxx.com
+            - key: mode
+              type: string
+              default: stream-one
+            - key: X-Forwarded-For
+              type: string
+              default: ""
+            - key: no-grpc-header
+              type: boolean
+              default: false
+            - key: x-padding-bytes
+              type: string
+              default: 100-1000
+            - key: x-padding-obfs-mode
+              type: boolean
+              default: false
+            - key: x-padding-key
+              type: string
+              default: x_padding
+            - key: x-padding-header
+              type: string
+              default: Referer
+            - key: x-padding-placement
+              type: string
+              default: queryInHeader
+            - key: x-padding-method
+              type: string
+              default: repeat-x
+            - key: uplink-http-method
+              type: string
+              default: POST
+            - key: session-placement
+              type: string
+              default: path
+            - key: session-key
+              type: string
+              default: ""
+            - key: seq-placement
+              type: string
+              default: path
+            - key: seq-key
+              type: string
+              default: ""
+            - key: uplink-data-placement
+              type: string
+              default: body
+            - key: uplink-data-key
+              type: string
+              default: ""
+            - key: uplink-chunk-size
+              type: number
+              default: 0
+            - key: sc-max-each-post-bytes
+              type: number
+              default: 1000000
+            - key: sc-min-posts-interval-ms
+              type: number
+              default: 30
+            - key: max-concurrency
+              type: string
+              default: 16-32
+            - key: max-connections
+              type: string
+              default: "0"
+            - key: c-max-reuse-times
+              type: string
+              default: "0"
+            - key: h-max-request-times
+              type: string
+              default: 600-900
+            - key: h-max-reusable-secs
+              type: string
+              default: 1800-3000
+            - key: h-keep-alive-period
+              type: number
+              default: 0
+            - key: server
+              type: string
+              default: server
+              description: 服务器地址
+            - key: port
+              type: number
+              default: 443
+              rules: *a1
+              description: 端口
+            - key: tls
+              type: boolean
+              default: true
+              description: 是否启用 TLS
+            - key: alpn
+              type: "null"
+              default: null
+              description: TLS ALPN 列表
+            - key: ech-opts
+              type: "null"
+              default: null
+              description: ECH 选项
+            - key: reality-opts
+              type: "null"
+              default: null
+              description: REALITY 选项
+            - key: skip-cert-verify
+              type: boolean
+              default: false
+              description: 是否跳过 TLS 证书验证
+            - key: fingerprint
+              type: "null"
+              default: null
+              description: TLS 指纹
+            - key: certificate
+              type: "null"
+              default: null
+              description: 证书
+            - key: private-key
+              type: "null"
+              default: null
+              description: 私钥
+            - key: servername
+              type: string
+              default: xxx.com
+            - key: client-fingerprint
+              type: string
+              default: chrome
+              description: TLS 客户端指纹
+        - key: enabled
+          type: boolean
+          default: false
+        - key: flow-show
+          type: boolean
+          default: true
+        - key: ports
+          type: string
+          default: 1000,2000-3000,5000
+        - key: auth-str
+          type: string
+          default: yourpassword
+        - key: obfs
+          type: string
+          default: obfs_str
+        - key: protocol
+          type: string
+          default: udp
+        - key: up
+          type: string
+          default: 30 Mbps
+        - key: down
+          type: string
+          default: 200 Mbps
+        - key: recv-window-conn
+          type: number
+          default: 12582912
+        - key: recv-window
+          type: number
+          default: 52428800
+        - key: disable-mtu-discovery
+          type: boolean
+          default: false
+        - key: fast-open
+          type: boolean
+          default: true
+        - key: hop-interval
+          type: number
+          default: 15
+        - key: bbr-profile
+          type: string
+          default: ""
+        - key: obfs-password
+          type: string
+          default: yourpassword
+        - key: server-url
+          type: string
+          default: https://realm.hy2.io
+        - key: token
+          type: string
+          default: public
+        - key: realm-id
+          type: string
+          default: my-cabin-1f3a8c2e9b
+        - key: ip
+          type: string
+          default: 172.16.0.2
+        - key: ipv6
+          type: string
+          default: fd01:5ca1:ab1e:80fa:ab85:6eea:213f:f4a5
+        - key: public-key
+          type: string
+          default: Cr8hWlKvtDt7nrvf+f0brNQQzabAqrjfBvas9pmowjo=
+        - key: pre-shared-key
+          type: string
+          default: 31aIhAPwktDGpH4JDhA8GNvjFXEf/a6+UaQRyOAiyfM=
+        - key: reserved
+          type: string
+          default: U4An
+        - key: persistent-keepalive
+          type: number
+          default: 0
+        - key: remote-dns-resolve
+          type: boolean
+          default: true
+          description: 是否由远端解析 DNS
+        - key: dns
+          type: array
+          default:
+            - 1.1.1.1
+            - 8.8.8.8
+          items:
+            type: string
+        - key: refresh-server-ip-interval
+          type: number
+          default: 60
+        - key: allowed-ips
+          type: array
+          default:
+            - 0.0.0.0/0
+          items:
+            type: string
+        - key: jc
+          type: number
+          default: 5
+        - key: jmin
+          type: number
+          default: 500
+        - key: jmax
+          type: number
+          default: 501
+        - key: s1
+          type: number
+          default: 30
+        - key: s2
+          type: number
+          default: 40
+        - key: s3
+          type: number
+          default: 50
+        - key: s4
+          type: number
+          default: 5
+        - key: h1
+          type: number
+          default: 123456
+        - key: h2
+          type: number
+          default: 67543
+        - key: h3
+          type: number
+          default: 123123
+        - key: h4
+          type: number
+          default: 32345
+        - key: i1
+          type: string
+          default: <b 0xf6ab3267fa><c><b 0xf6ab><t><r 10><wt 10>
+        - key: i2
+          type: string
+          default: <b 0xf6ab3267fa><r 100>
+        - key: i3
+          type: string
+          default: ""
+        - key: i4
+          type: string
+          default: ""
+        - key: i5
+          type: string
+          default: ""
+        - key: j1
+          type: string
+          default: <b 0xffffffff><c><b 0xf6ab><t><r 10>
+        - key: j2
+          type: string
+          default: <c><b 0xf6ab><t><wt 1000>
+        - key: j3
+          type: string
+          default: <t><b 0xf6ab><c><r 10>
+        - key: itime
+          type: number
+          default: 60
+        - key: hostname
+          type: string
+          default: mihomo
+        - key: auth-key
+          type: string
+          default: tskey-auth-xxxx
+        - key: control-url
+          type: string
+          default: https://controlplane.tailscale.com
+        - key: state-dir
+          type: string
+          default: ./tailscale
+        - key: ephemeral
+          type: boolean
+          default: false
+        - key: accept-routes
+          type: boolean
+          default: true
+          description: 是否接受路由
+        - key: exit-node
+          type: string
+          default: 100.64.0.1
+        - key: exit-node-allow-lan-access
+          type: boolean
+          default: true
+        - key: interface-name
+          type: string
+          default: WLAN
+          description: 出站网卡
+        - key: routing-mark
+          type: number
+          default: 6666
+          description: 出站 fwmark
+        - key: proto
+          type: string
+          default: udp
+        - key: dev
+          type: string
+          default: tun
+        - key: auth
+          type: string
+          default: SHA256
+        - key: ca
+          type: string
+          default: ""
+        - key: cert
+          type: string
+          default: ""
+        - key: key
+          type: string
+          default: ""
+        - key: tls-crypt
+          type: string
+          default: ""
+        - key: mtu
+          type: number
+          default: 1500
+        - key: congestion-controller
+          type: string
+          default: bbr
+          description: 拥塞控制算法
+        - key: heartbeat-interval
+          type: number
+          default: 10000
+        - key: disable-sni
+          type: boolean
+          default: true
+        - key: reduce-rtt
+          type: boolean
+          default: true
+        - key: request-timeout
+          type: number
+          default: 8000
+        - key: udp-relay-mode
+          type: string
+          default: native
+        - key: cwnd
+          type: number
+          default: 10
+        - key: max-udp-relay-packet-size
+          type: number
+          default: 1500
+          description: UDP 中继最大包长
+        - key: max-open-streams
+          type: number
+          default: 20
+        - key: udp-over-stream
+          type: boolean
+          default: false
+        - key: udp-over-stream-version
+          type: number
+          default: 1
+        - key: obfs-param
+          type: string
+          default: domain.tld
+        - key: protocol-param
+          type: string
+          default: ""
+        - key: privateKey
+          type: string
+          default: path
+        - key: port-range
+          type: string
+          default: 2090-2099
+        - key: transport
+          type: string
+          default: TCP
+        - key: multiplexing
+          type: string
+          default: MULTIPLEXING_LOW
+        - key: handshake-mode
+          type: string
+          default: HANDSHAKE_STANDARD
+        - key: traffic-pattern
+          type: string
+          default: ""
+        - key: aead-method
+          type: string
+          default: chacha20-poly1305
+        - key: padding-min
+          type: number
+          default: 2
+        - key: padding-max
+          type: number
+          default: 7
+        - key: table-type
+          type: string
+          default: prefer_ascii
+        - key: custom-table
+          type: string
+          default: xpxvvpvv
+        - key: custom-tables
+          type: array
+          default:
+            - xpxvvpvv
+            - vxpvxvvp
+          items:
+            type: string
+        - key: httpmask
+          type: object
+          default: {}
+          properties:
+            - key: disable
+              type: boolean
+              default: false
+              description: 是否禁用
+            - key: mode
+              type: string
+              default: legacy
+            - key: tls
+              type: boolean
+              default: true
+              description: 是否启用 TLS
+            - key: host
+              type: string
+              default: ""
+            - key: path-root
+              type: string
+              default: ""
+            - key: multiplex
+              type: string
+              default: off
+        - key: enable-pure-downlink
+          type: boolean
+          default: false
+          description: 是否启用纯下行（关闭为带宽优化下行）
+        - key: idle-session-check-interval
+          type: number
+          default: 30
+        - key: idle-session-timeout
+          type: number
+          default: 30
+        - key: min-idle-session
+          type: number
+          default: 0
+        - key: health-check
+          type: boolean
+          default: true
+          description: 健康检查配置
+        - key: quic
+          type: boolean
+          default: true
+        - key: max-connections
+          type: number
+          default: 8
+        - key: min-streams
+          type: number
+          default: 5
+        - key: max-streams
+          type: number
+          default: 0
+        - &a2
+          key: name
+          type: string
+          default: 默认
+          description: 名称
+    description: 出站代理节点列表
+    default:
+      - name: 默认
+        type: vless
+        server: ""
+        port: 1234
+        uuid: ""
+        udp: true
+        encryption: ""
+      - name: http
+        type: http
+        server: server
+        port: 443
+      - name: snell
+        type: snell
+        server: server
+        port: 44046
+        psk: yourpsk
+      - name: ss1
+        type: ss
+        server: server
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password: password
+        smux:
+          enabled: false
+          protocol: smux
+      - name: ss2
+        type: ss
+        server: server
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password: password
+        plugin: obfs
+        plugin-opts:
+          mode: tls
+      - name: ss3
+        type: ss
+        server: server
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password: password
+        plugin: v2ray-plugin
+        plugin-opts:
+          mode: websocket
+      - name: ss4-shadow-tls
+        type: ss
+        server: server
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password: password
+        plugin: shadow-tls
+        client-fingerprint: chrome
+        plugin-opts:
+          host: cloud.tencent.com
+          password: shadow_tls_password
+          version: 2
+      - name: ss5
+        type: ss
+        server: server
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password: password
+        plugin: gost-plugin
+        plugin-opts:
+          mode: websocket
+      - name: gost-relay-hop
+        type: gost-relay
+        server: relay.example.com
+        port: 443
+        udp: true
+        tls: true
+      - name: ss6-gost-relay
+        type: ss
+        server: 127.0.0.1
+        port: 12345
+        cipher: chacha20-ietf-poly1305
+        password: password
+        udp: true
+        dialer-proxy: gost-relay-hop
+      - name: ss-restls-tls13
+        type: ss
+        server:
+          - YOUR_SERVER_IP
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password:
+          - YOUR_SS_PASSWORD
+        client-fingerprint: chrome
+        plugin: restls
+        plugin-opts:
+          host: www.microsoft.com
+          password:
+            - YOUR_RESTLS_PASSWORD
+          version-hint: tls13
+          restls-script: 300?100<1,400~100,350~100,600~100,300~200,300~100
+      - name: ss-restls-tls12
+        type: ss
+        server:
+          - YOUR_SERVER_IP
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password:
+          - YOUR_SS_PASSWORD
+        client-fingerprint: chrome
+        plugin: restls
+        plugin-opts:
+          host: vscode.dev
+          password:
+            - YOUR_RESTLS_PASSWORD
+          version-hint: tls12
+          restls-script: 1000?100<1,500~100,350~100,600~100,400~200
+      - name: ss-kcptun
+        type: ss
+        server:
+          - YOUR_SERVER_IP
+        port: 443
+        cipher: chacha20-ietf-poly1305
+        password:
+          - YOUR_SS_PASSWORD
+        plugin: kcptun
+        plugin-opts:
+          key: it's a secrect
+          crypt: aes
+          mode: fast
+          conn: 1
+          autoexpire: 0
+          scavengettl: 600
+          mtu: 1350
+          ratelimit: 0
+          sndwnd: 128
+          rcvwnd: 512
+          datashard: 10
+          parityshard: 3
+          dscp: 0
+          nocomp: false
+          acknodelay: false
+          nodelay: 0
+          interval: 50
+          resend: 0
+          sockbuf: 4194304
+          smuxver: 1
+          smuxbuf: 4194304
+          framesize: 8192
+          streambuf: 2097152
+          keepalive: 10
+      - name: vmess
+        type: vmess
+        server: server
+        port: 443
+        uuid: uuid
+        alterId: 32
+        cipher: auto
+      - name: vmess-h2
+        type: vmess
+        server: server
+        port: 443
+        uuid: uuid
+        alterId: 32
+        cipher: auto
+        network: h2
+        tls: true
+        h2-opts:
+          host:
+            - http.example.com
+            - http-alt.example.com
+          path: /
+      - name: vmess-http
+        type: vmess
+        server: server
+        port: 443
+        uuid: uuid
+        alterId: 32
+        cipher: auto
+      - name: vmess-grpc
+        server: server
+        port: 443
+        type: vmess
+        uuid: uuid
+        alterId: 32
+        cipher: auto
+        network: grpc
+        tls: true
+        servername: example.com
+        grpc-opts:
+          grpc-service-name: example
+      - name: vless-tcp
+        type: vless
+        server: server
+        port: 443
+        uuid: uuid
+        network: tcp
+        servername: example.com
+      - name: vless-vision
+        type: vless
+        server: server
+        port: 443
+        uuid: uuid
+        network: tcp
+        tls: true
+        udp: true
+        flow: xtls-rprx-vision
+        client-fingerprint: chrome
+      - name: vless-encryption
+        type: vless
+        server: server
+        port: 443
+        uuid: uuid
+        network: tcp
+        encryption: mlkem768x25519plus.native/xorpub/random.1rtt/0rtt.(padding len).(padding gap).(X25519 Password).(ML-KEM-768 Client)...
+        tls: false
+        udp: true
+      - name: vless-reality-vision
+        type: vless
+        server: server
+        port: 443
+        uuid: uuid
+        network: tcp
+        tls: true
+        udp: true
+        flow: xtls-rprx-vision
+        servername: www.microsoft.com
+        reality-opts:
+          public-key: xxx
+          short-id: xxx
+          support-x25519mlkem768: false
+        client-fingerprint: chrome
+      - name: vless-reality-grpc
+        type: vless
+        server: server
+        port: 443
+        uuid: uuid
+        network: grpc
+        tls: true
+        udp: true
+        flow: null
+        client-fingerprint: chrome
+        servername: testingcf.jsdelivr.net
+        grpc-opts:
+          grpc-service-name: grpc
+        reality-opts:
+          public-key: CrrQSjAG_YkHLwvM2M-7XkKJilgL5upBKCp0od0tLhE
+          short-id: 10f897e26c4b9478
+          support-x25519mlkem768: false
+      - name: vless-ws
+        type: vless
+        server: server
+        port: 443
+        uuid: uuid
+        udp: true
+        tls: true
+        network: ws
+        servername: example.com
+        ws-opts:
+          path: /
+          headers:
+            Host: example.com
+      - name: vless-xhttp
+        type: vless
+        server: server
+        port: 443
+        uuid: uuid
+        udp: true
+        tls: true
+        network: xhttp
+        alpn:
+          - h2
+        servername: xxx.com
+        client-fingerprint: chrome
+        encryption: ""
+        xhttp-opts:
+          path: /
+          host: xxx.com
+      - name: trojan
+        type: trojan
+        server: server
+        port: 443
+        password: yourpsk
+      - name: trojan-grpc
+        server: server
+        port: 443
+        type: trojan
+        password: example
+        network: grpc
+        sni: example.com
+        udp: true
+        grpc-opts:
+          grpc-service-name: example
+      - name: trojan-ws
+        server: server
+        port: 443
+        type: trojan
+        password: example
+        network: ws
+        sni: example.com
+        udp: true
+      - name: trojan-xtls
+        type: trojan
+        server: server
+        port: 443
+        password: yourpsk
+        flow: xtls-rprx-direct
+        flow-show: true
+      - name: hysteria
+        type: hysteria
+        server: server.com
+        port: 443
+        auth-str: yourpassword
+        protocol: udp
+        up: 30 Mbps
+        down: 200 Mbps
+      - name: hysteria2
+        type: hysteria2
+        server: server.com
+        port: 443
+        password: yourpassword
+      - name: wg
+        type: wireguard
+        server: 162.159.192.1
+        port: 2480
+        ip: 172.16.0.2
+        ipv6: fd01:5ca1:ab1e:80fa:ab85:6eea:213f:f4a5
+        public-key: Cr8hWlKvtDt7nrvf+f0brNQQzabAqrjfBvas9pmowjo=
+        private-key: eCtXsJZ27+4PbhDkHnB923tkUn2Gj59wZw5wFA75MnU=
+        udp: true
+        reserved: U4An
+      - name: tailscale
+        type: tailscale
+        udp: true
+      - name: openvpn
+        type: openvpn
+        server: vpn.example.com
+        port: 1194
+        proto: udp
+        ca: |
+          -----BEGIN CERTIFICATE-----
+          MIIB...example
+          -----END CERTIFICATE-----
+        cert: |
+          -----BEGIN CERTIFICATE-----
+          MIIB...example
+          -----END CERTIFICATE-----
+        key: |
+          -----BEGIN PRIVATE KEY-----
+          MIIE...example
+          -----END PRIVATE KEY-----
+        tls-crypt: |
+          -----BEGIN OpenVPN Static key V1-----
+          00000000000000000000000000000000
+          ...
+          -----END OpenVPN Static key V1-----
+        udp: true
+      - name: masque
+        type: masque
+        server: 162.159.198.1
+        port: 443
+        private-key: MHcCAQEEILI1eOtnbEIh89Fj4yNDuFR6UjayCKI3NdLl3DhetimWoAoGCCqGSM49AwEHoUQDQgAEgyXrE8v+hHsHy3ewSb3WcRjYgCrM9T9hiE0Uv6k2DZ1+4kefrDT9v1Q/8wdRigTf6t6gGNUV8W+IUMdrfUt+9g==
+        public-key: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIaU7MToJm9NKp8YfGxR6r+/h4mcG7SxI8tsW8OR1A5tv/zCzVbCRRh2t87/kxnP6lAy0lkr7qYwu+ox+k3dr6w==
+        ip: 172.16.0.2
+        ipv6: 2606:4700:110:84c0:163a:4914:a0ad:3342
+        mtu: 1280
+        udp: true
+      - name: masque-h2
+        type: masque
+        server: 162.159.198.2
+        port: 443
+        private-key: MHcCAQEEILI1eOtnbEIh89Fj4yNDuFR6UjayCKI3NdLl3DhetimWoAoGCCqGSM49AwEHoUQDQgAEgyXrE8v+hHsHy3ewSb3WcRjYgCrM9T9hiE0Uv6k2DZ1+4kefrDT9v1Q/8wdRigTf6t6gGNUV8W+IUMdrfUt+9g==
+        public-key: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIaU7MToJm9NKp8YfGxR6r+/h4mcG7SxI8tsW8OR1A5tv/zCzVbCRRh2t87/kxnP6lAy0lkr7qYwu+ox+k3dr6w==
+        ip: 172.16.0.2
+        ipv6: 2606:4700:110:84c0:163a:4914:a0ad:3342
+        mtu: 1280
+        udp: true
+        network: h2
+      - name: tuic
+        server: www.example.com
+        port: 10443
+        type: tuic
+        token: TOKEN
+        uuid: 00000000-0000-0000-0000-000000000001
+        password: PASSWORD_1
+        disable-sni: true
+        reduce-rtt: true
+        request-timeout: 8000
+        udp-relay-mode: native
+      - name: ssr
+        type: ssr
+        server: server
+        port: 443
+        cipher: chacha20-ietf
+        password: password
+        obfs: tls1.2_ticket_auth
+        protocol: auth_sha1_v4
+      - name: ssh-out
+        type: ssh
+        server: 127.0.0.1
+        port: 22
+        username: root
+        password: password
+        privateKey: path
+      - name: mieru
+        type: mieru
+        server: 1.2.3.4
+        port: 2999
+        transport: TCP
+        udp: true
+        username: user
+        password: password
+      - name: sudoku
+        type: sudoku
+        server: server_ip/domain
+        port: 443
+        key: <client_key>
+        aead-method: chacha20-poly1305
+        padding-min: 2
+        padding-max: 7
+        table-type: prefer_ascii
+        httpmask:
+          disable: false
+          mode: legacy
+        enable-pure-downlink: false
+      - name: anytls
+        type: anytls
+        server: 1.2.3.4
+        port: 443
+        password: <your password>
+        udp: true
+      - name: trusttunnel
+        type: trusttunnel
+        server: 1.2.3.4
+        port: 443
+        username: username
+        password: password
+        health-check: true
+        udp: true
+      - name: dns-out
+        type: dns
+      - name: en1-direct
+        type: direct
+        interface-name: en1
+        routing-mark: 6667
+  - key: proxy-groups
+    type: array
+    items:
+      type: object
+      properties:
+        - key: Traffic
+          type: string
+          default: mihomo <-> http <-> vmess <-> ss1 <-> ss2 <-> Internet
+        - key: type
+          type: string
+          default: select
+          description: 类型
+        - key: proxies
+          type: array
+          default: []
+          properties: []
+          items:
+            type: string
+          description: 策略组引用的代理或组
+        - key: tolerance
+          type: number
+          default: 150
+          description: 延迟容差（毫秒）
+        - key: lazy
+          type: boolean
+          default: true
+          description: 是否惰性测速
+        - key: expected-status
+          type: number
+          default: 204
+          description: 健康检查期望 HTTP 状态码
+        - key: url
+          type: string
+          default: https://cp.cloudflare.com/generate_204
+          description: 远程规则集地址
+        - key: interval
+          type: number
+          default: 300
+          description: 更新间隔（秒）
+        - key: strategy
+          type: string
+          default: consistent-hashing
+        - key: disable-udp
+          type: boolean
+          default: true
+          description: 是否禁用 UDP
+        - key: filter
+          type: string
+          default: HK|TW
+          description: 过滤表达式
+        - key: use
+          type: object
+          default: {}
+          properties: []
+          description: 引用的代理集合
+        - key: name
+          type: string
+          default: 默认
+          description: 名称
+    description: 代理策略组列表
+    default:
+      - name: 默认
+        type: select
+        proxies: []
+      - name: auto
+        type: url-test
+        proxies:
+          - ss1
+          - ss2
+          - vmess1
+        url: https://cp.cloudflare.com/generate_204
+        interval: 300
+      - name: fallback-auto
+        type: fallback
+        proxies:
+          - ss1
+          - ss2
+          - vmess1
+        url: https://cp.cloudflare.com/generate_204
+        interval: 300
+      - name: load-balance
+        type: load-balance
+        proxies:
+          - ss1
+          - ss2
+          - vmess1
+        url: https://cp.cloudflare.com/generate_204
+        interval: 300
+      - name: Proxy
+        type: select
+        proxies:
+          - ss1
+          - ss2
+          - vmess1
+          - auto
+      - name: UseProvider
+        type: select
+        filter: HK|TW
+        use:
+          - provider1
+        proxies:
+          - Proxy
+          - DIRECT
+  - key: proxy-providers
+    type: object
+    properties:
+      - key: provider1
+        type: object
+        properties:
+          - key: type
+            type: string
+            default: http
+            description: 类型
+          - key: url
+            type: string
+            default: url
+            description: 远程规则集地址
+          - key: interval
+            type: number
+            default: 3600
+            description: 更新间隔（秒）
+          - key: path
+            type: string
+            default: ./provider1.yaml
+            description: 本地规则集路径
+          - key: proxy
+            type: string
+            default: DIRECT
+            description: 使用的代理
+          - key: size-limit
+            type: number
+            default: 10240
+            description: 下载大小限制
+          - key: header
+            type: object
+            properties:
+              - key: User-Agent
+                type: array
+                items:
+                  type: string
+                default:
+                  - Clash/v1.18.0
+                  - mihomo/1.18.3
+            default:
+              User-Agent:
+                - Clash/v1.18.0
+                - mihomo/1.18.3
+          - key: health-check
+            type: object
+            properties:
+              - key: enable
+                type: boolean
+                default: true
+                description: 是否启用
+              - key: interval
+                type: number
+                default: 600
+                description: 更新间隔（秒）
+              - key: lazy
+                type: boolean
+                default: true
+                description: 是否惰性测速
+              - key: url
+                type: string
+                default: https://cp.cloudflare.com/generate_204
+                description: 远程规则集地址
+              - key: expected-status
+                type: number
+                default: 204
+                description: 健康检查期望 HTTP 状态码
+            default:
+              enable: true
+              interval: 600
+              url: https://cp.cloudflare.com/generate_204
+            description: 健康检查配置
+          - key: override
+            type: object
+            properties:
+              - key: skip-cert-verify
+                type: boolean
+                default: true
+                description: 是否跳过 TLS 证书验证
+              - key: udp
+                type: boolean
+                default: true
+                description: 是否启用 UDP
+              - key: down
+                type: string
+                default: 50 Mbps
+              - key: up
+                type: string
+                default: 10 Mbps
+              - key: dialer-proxy
+                type: string
+                default: proxy
+                description: 发起连接使用的代理
+              - key: interface-name
+                type: string
+                default: tailscale0
+                description: 出站网卡
+              - key: routing-mark
+                type: number
+                default: 233
+                description: 出站 fwmark
+              - key: ip-version
+                type: string
+                default: ipv4-prefer
+                description: IP 版本偏好
+              - key: additional-prefix
+                type: string
+                default: "[provider1]"
+              - key: additional-suffix
+                type: string
+                default: test
+              - key: target
+                type: string
+                default: TEST
+                description: 转发目标
+            default:
+              skip-cert-verify: true
+              udp: true
+        default:
+          type: http
+          url: url
+          interval: 3600
+          path: ./provider1.yaml
+          proxy: DIRECT
+          header:
+            User-Agent:
+              - Clash/v1.18.0
+              - mihomo/1.18.3
+          health-check:
+            enable: true
+            interval: 600
+            url: https://cp.cloudflare.com/generate_204
+          override:
+            skip-cert-verify: true
+            udp: true
+      - key: provider2
+        type: object
+        properties:
+          - key: type
+            type: string
+            default: inline
+            description: 类型
+          - key: dialer-proxy
+            type: string
+            default: proxy
+            description: 发起连接使用的代理
+          - key: payload
+            type: array
+            items:
+              type: object
+              properties:
+                - key: type
+                  type: string
+                  default: ss
+                  description: 类型
+                - key: server
+                  type: string
+                  default: server
+                  description: 服务器地址
+                - key: port
+                  type: number
+                  default: 443
+                  rules: *a1
+                  description: 端口
+                - key: cipher
+                  type: string
+                  default: chacha20-ietf-poly1305
+                  description: 加密方式
+                - key: password
+                  type: string
+                  default: password
+                  description: 密码
+            default:
+              - name: ss1
+                type: ss
+                server: server
+                port: 443
+                cipher: chacha20-ietf-poly1305
+                password: password
+            description: 内联规则集内容
+        default:
+          type: inline
+          dialer-proxy: proxy
+          payload:
+            - name: ss1
+              type: ss
+              server: server
+              port: 443
+              cipher: chacha20-ietf-poly1305
+              password: password
+      - key: test
+        type: object
+        properties:
+          - key: type
+            type: string
+            default: file
+            description: 类型
+          - key: path
+            type: string
+            default: /test.yaml
+            description: 本地规则集路径
+          - key: health-check
+            type: object
+            properties:
+              - key: enable
+                type: boolean
+                default: true
+                description: 是否启用
+              - key: interval
+                type: number
+                default: 36000
+                description: 更新间隔（秒）
+              - key: url
+                type: string
+                default: https://cp.cloudflare.com/generate_204
+                description: 远程规则集地址
+            default:
+              enable: true
+              interval: 36000
+              url: https://cp.cloudflare.com/generate_204
+            description: 健康检查配置
+        default:
+          type: file
+          path: /test.yaml
+          health-check:
+            enable: true
+            interval: 36000
+            url: https://cp.cloudflare.com/generate_204
+    description: 代理集合提供者列表
+    default:
+      provider1:
+        type: http
+        url: url
+        interval: 3600
+        path: ./provider1.yaml
+        proxy: DIRECT
+        header:
+          User-Agent:
+            - Clash/v1.18.0
+            - mihomo/1.18.3
+        health-check:
+          enable: true
+          interval: 600
+          url: https://cp.cloudflare.com/generate_204
+        override:
+          skip-cert-verify: true
+          udp: true
+      provider2:
+        type: inline
+        dialer-proxy: proxy
+        payload:
+          - name: ss1
+            type: ss
+            server: server
+            port: 443
+            cipher: chacha20-ietf-poly1305
+            password: password
+      test:
+        type: file
+        path: /test.yaml
+        health-check:
+          enable: true
+          interval: 36000
+          url: https://cp.cloudflare.com/generate_204
+  - key: rule-providers
+    type: object
+    properties:
+      - key: rule1
+        type: object
+        properties:
+          - key: behavior
+            type: string
+            default: classical
+            description: 规则集类型
+          - key: interval
+            type: number
+            default: 259200
+            description: 更新间隔（秒）
+          - key: path
+            type: string
+            default: /path/to/save/file.yaml
+            description: 本地规则集路径
+          - key: type
+            type: string
+            default: http
+            description: 类型
+          - key: url
+            type: string
+            default: url
+            description: 远程规则集地址
+          - key: proxy
+            type: string
+            default: DIRECT
+            description: 使用的代理
+          - key: size-limit
+            type: number
+            default: 10240
+            description: 下载大小限制
+        default:
+          behavior: classical
+          interval: 259200
+          path: /path/to/save/file.yaml
+          type: http
+          url: url
+          proxy: DIRECT
+      - key: rule2
+        type: object
+        properties:
+          - key: behavior
+            type: string
+            default: classical
+            description: 规则集类型
+          - key: interval
+            type: number
+            default: 259200
+            description: 更新间隔（秒）
+          - key: path
+            type: string
+            default: /path/to/save/file.yaml
+            description: 本地规则集路径
+          - key: type
+            type: string
+            default: file
+            description: 类型
+        default:
+          behavior: classical
+          interval: 259200
+          path: /path/to/save/file.yaml
+          type: file
+      - key: rule3
+        type: object
+        properties:
+          - key: type
+            type: string
+            default: http
+            description: 类型
+          - key: url
+            type: string
+            default: url
+            description: 远程规则集地址
+          - key: format
+            type: string
+            default: mrs
+            description: 规则集文件格式
+          - key: behavior
+            type: string
+            default: domain
+            description: 规则集类型
+          - key: path
+            type: string
+            default: /path/to/save/file.mrs
+            description: 本地规则集路径
+        default:
+          type: http
+          url: url
+          format: mrs
+          behavior: domain
+          path: /path/to/save/file.mrs
+      - key: rule4
+        type: object
+        properties:
+          - key: type
+            type: string
+            default: inline
+            description: 类型
+          - key: behavior
+            type: string
+            default: domain
+            description: 规则集类型
+          - key: payload
+            type: array
+            items:
+              type: string
+            default:
+              - .blogger.com
+              - "*.*.microsoft.com"
+              - books.itunes.apple.com
+            description: 内联规则集内容
+        default:
+          type: inline
+          behavior: domain
+          payload:
+            - .blogger.com
+            - "*.*.microsoft.com"
+            - books.itunes.apple.com
+    description: 规则集提供者列表
+    default:
+      rule1:
+        behavior: classical
+        interval: 259200
+        path: /path/to/save/file.yaml
+        type: http
+        url: url
+        proxy: DIRECT
+      rule2:
+        behavior: classical
+        interval: 259200
+        path: /path/to/save/file.yaml
+        type: file
+      rule3:
+        type: http
+        url: url
+        format: mrs
+        behavior: domain
+        path: /path/to/save/file.mrs
+      rule4:
+        type: inline
+        behavior: domain
+        payload:
+          - .blogger.com
+          - "*.*.microsoft.com"
+          - books.itunes.apple.com
+  - key: rules
+    type: array
+    items:
+      type: string
+    description: 路由规则列表
+    default:
+      - DOMAIN-SUFFIX,cn,DIRECT
+      - IP-ASN,1,PROXY
+      - DOMAIN-REGEX,^abc,DIRECT
+      - DOMAIN-SUFFIX,baidu.com,DIRECT
+      - DOMAIN-KEYWORD,google,ss1
+      - DOMAIN-WILDCARD,test.*.mihomo.com,ss1
+      - IP-CIDR,1.1.1.1/32,ss1
+      - IP-CIDR6,2409::/64,DIRECT
+      - SUB-RULE,(OR,((NETWORK,TCP),(NETWORK,UDP))),sub-rule-name1
+      - SUB-RULE,(AND,((NETWORK,UDP))),sub-rule-name2
+  - key: sub-rules
+    type: object
+    properties:
+      - key: sub-rule-name1
+        type: array
+        items:
+          type: string
+        default:
+          - DOMAIN,google.com,ss1
+          - DOMAIN,baidu.com,DIRECT
+      - key: sub-rule-name2
+        type: array
+        items:
+          type: string
+        default:
+          - IP-CIDR,1.1.1.1/32,REJECT
+          - IP-CIDR,8.8.8.8/32,ss1
+          - DOMAIN,dns.alidns.com,REJECT
+    description: 子规则集映射
+    default:
+      sub-rule-name1:
+        - DOMAIN,google.com,ss1
+        - DOMAIN,baidu.com,DIRECT
+      sub-rule-name2:
+        - IP-CIDR,1.1.1.1/32,REJECT
+        - IP-CIDR,8.8.8.8/32,ss1
+        - DOMAIN,dns.alidns.com,REJECT
+  - key: listeners
+    type: array
+    items:
+      type: object
+      properties:
+        - key: type
+          type: string
+          default: socks
+          description: 类型
+        - key: port
+          type: number
+          default: 10808
+          rules: *a1
+          description: 端口
+        - key: listen
+          type: string
+          default: 0.0.0.0
+          description: 监听地址
+        - key: rule
+          type: string
+          default: sub-rule-name1
+          description: 单条路由规则
+        - key: proxy
+          type: string
+          default: proxy
+          description: 使用的代理
+        - key: udp
+          type: boolean
+          default: false
+          description: 是否启用 UDP
+        - key: password
+          type: string
+          default: aaa
+          description: 密码
+        - key: certificate
+          type: string
+          default: ./server.crt
+          description: 证书
+        - key: private-key
+          type: string
+          default: ./server.key
+          description: 私钥
+        - key: client-auth-type
+          type: string
+          default: ""
+        - key: client-auth-cert
+          type: string
+          default: string
+        - key: ech-key
+          type: string
+          default: ""
+        - key: cipher
+          type: string
+          default: 2022-blake3-aes-256-gcm
+          description: 加密方式
+        - key: enable
+          type: boolean
+          default: false
+          description: 是否启用
+        - key: mode
+          type: string
+          default: http
+        - key: version
+          type: number
+          default: 3
+        - key: dest
+          type: string
+          default: test.com:443
+        - key: key
+          type: string
+          default: it's a secrect
+        - key: crypt
+          type: string
+          default: aes
+        - key: conn
+          type: number
+          default: 1
+        - key: autoexpire
+          type: number
+          default: 0
+        - key: scavengettl
+          type: number
+          default: 600
+        - key: ratelimit
+          type: number
+          default: 0
+        - key: mtu
+          type: number
+          default: 1350
+        - key: sndwnd
+          type: number
+          default: 128
+        - key: rcvwnd
+          type: number
+          default: 512
+        - key: datashard
+          type: number
+          default: 10
+        - key: parityshard
+          type: number
+          default: 3
+        - key: dscp
+          type: number
+          default: 0
+        - key: nocomp
+          type: boolean
+          default: false
+        - key: acknodelay
+          type: boolean
+          default: false
+        - key: nodelay
+          type: number
+          default: 0
+        - key: interval
+          type: number
+          default: 50
+          description: 更新间隔（秒）
+        - key: resend
+          type: number
+          default: 0
+        - key: sockbuf
+          type: number
+          default: 4194304
+        - key: smuxver
+          type: number
+          default: 1
+        - key: smuxbuf
+          type: number
+          default: 4194304
+        - key: framesize
+          type: number
+          default: 8192
+        - key: streambuf
+          type: number
+          default: 2097152
+        - key: keepalive
+          type: number
+          default: 10
+        - key: users
+          type: object
+          default: {}
+          properties:
+            - key: uuid
+              type: string
+              default: 9d0cb9d0-964f-4ef6-897d-6c6b3ccf9e68
+              description: 用户 ID
+            - key: alterId
+              type: number
+              default: 1
+            - key: flow
+              type: string
+              default: xtls-rprx-vision
+            - key: username1
+              type: string
+              default: password1
+            - key: username2
+              type: string
+              default: password2
+            - key: password
+              type: string
+              default: 9d0cb9d0-964f-4ef6-897d-6c6b3ccf9e68
+              description: 密码
+        - key: ws-path
+          type: string
+          default: /
+        - key: grpc-service-name
+          type: string
+          default: GunService
+        - key: after-bytes
+          type: number
+          default: 0
+        - key: bytes-per-sec
+          type: number
+          default: 0
+        - key: burst-bytes-per-sec
+          type: number
+          default: 0
+        - key: congestion-controller
+          type: string
+          default: bbr
+          description: 拥塞控制算法
+        - key: bbr-profile
+          type: string
+          default: ""
+        - key: max-idle-time
+          type: number
+          default: 15000
+          description: 最大空闲时间
+        - key: authentication-timeout
+          type: number
+          default: 1000
+          description: 认证超时
+        - key: max-udp-relay-packet-size
+          type: number
+          default: 1500
+          description: UDP 中继最大包长
+        - key: network
+          type: array
+          default:
+            - tcp
+            - udp
+          items:
+            type: string
+          description: 传输协议
+        - key: target
+          type: string
+          default: target.com
+          description: 转发目标
+        - key: path
+          type: string
+          default: /
+          description: 本地规则集路径
+        - key: host
+          type: string
+          default: ""
+        - key: no-sse-header
+          type: boolean
+          default: false
+        - key: x-padding-bytes
+          type: string
+          default: 100-1000
+        - key: x-padding-obfs-mode
+          type: boolean
+          default: false
+        - key: x-padding-key
+          type: string
+          default: x_padding
+        - key: x-padding-header
+          type: string
+          default: Referer
+        - key: x-padding-placement
+          type: string
+          default: queryInHeader
+        - key: x-padding-method
+          type: string
+          default: repeat-x
+        - key: uplink-http-method
+          type: string
+          default: POST
+        - key: session-placement
+          type: string
+          default: path
+        - key: session-key
+          type: string
+          default: ""
+        - key: seq-placement
+          type: string
+          default: path
+        - key: seq-key
+          type: string
+          default: ""
+        - key: uplink-data-placement
+          type: string
+          default: body
+        - key: uplink-data-key
+          type: string
+          default: ""
+        - key: uplink-chunk-size
+          type: number
+          default: 0
+        - key: sc-max-buffered-posts
+          type: number
+          default: 30
+        - key: sc-stream-up-server-secs
+          type: string
+          default: 20-80
+        - key: sc-max-each-post-bytes
+          type: number
+          default: 1000000
+        - key: decryption
+          type: string
+          default: mlkem768x25519plus.native/xorpub/random.600s(300-600s)/0s.(padding len).(padding gap).(X25519 PrivateKey).(ML-KEM-768 Seed)...
+        - key: reality-config
+          type: object
+          default: {}
+          properties:
+            - key: dest
+              type: string
+              default: test.com:443
+            - key: private-key
+              type: string
+              default: jNXHt1yRo0vDuchQlIP6Z0ZvjT3KtzVI-T4E7RoLJS0
+              description: 私钥
+            - key: short-id
+              type: object
+              properties: []
+              default: {}
+            - key: server-names
+              type: object
+              properties: []
+              default: {}
+            - key: limit-fallback-upload
+              type: object
+              properties:
+                - key: after-bytes
+                  type: number
+                  default: 0
+                - key: bytes-per-sec
+                  type: number
+                  default: 0
+                - key: burst-bytes-per-sec
+                  type: number
+                  default: 0
+              default: {}
+            - key: limit-fallback-download
+              type: object
+              properties:
+                - key: after-bytes
+                  type: number
+                  default: 0
+                - key: bytes-per-sec
+                  type: number
+                  default: 0
+                - key: burst-bytes-per-sec
+                  type: number
+                  default: 0
+              default: {}
+        - key: padding-scheme
+          type: string
+          default: ""
+        - key: transport
+          type: string
+          default: TCP
+        - key: traffic-pattern
+          type: string
+          default: ""
+        - key: user-hint-is-mandatory
+          type: boolean
+          default: false
+        - key: aead-method
+          type: string
+          default: chacha20-poly1305
+        - key: padding-min
+          type: number
+          default: 1
+        - key: padding-max
+          type: number
+          default: 15
+        - key: table-type
+          type: string
+          default: prefer_ascii
+        - key: custom-table
+          type: string
+          default: xpxvvpvv
+        - key: custom-tables
+          type: array
+          default:
+            - xpxvvpvv
+            - vxpvxvvp
+          items:
+            type: string
+        - key: handshake-timeout
+          type: number
+          default: 5
+        - key: enable-pure-downlink
+          type: boolean
+          default: false
+          description: 是否启用纯下行（关闭为带宽优化下行）
+        - key: httpmask
+          type: object
+          default: {}
+          properties:
+            - key: disable
+              type: boolean
+              default: false
+              description: 是否禁用
+            - key: mode
+              type: string
+              default: legacy
+            - key: path-root
+              type: string
+              default: ""
+        - key: fallback
+          type: string
+          default: 127.0.0.1:80
+        - key: enabled
+          type: boolean
+          default: false
+        - key: method
+          type: string
+          default: aes-128-gcm
+        - key: up
+          type: string
+          default: 30 Mbps
+        - key: down
+          type: string
+          default: 200 Mbps
+        - key: obfs
+          type: string
+          default: salamander
+        - key: obfs-password
+          type: string
+          default: yourpassword
+        - key: ignore-client-bandwidth
+          type: boolean
+          default: false
+        - key: masquerade
+          type: string
+          default: file:///var/www
+        - key: server-url
+          type: string
+          default: https://realm.hy2.io
+        - key: token
+          type: string
+          default: public
+        - key: realm-id
+          type: string
+          default: my-cabin-1f3a8c2e9b
+        - key: max-realms
+          type: number
+          default: 65536
+        - key: max-realms-per-ip
+          type: number
+          default: 4
+        - key: trusted-proxy-header
+          type: string
+          default: ""
+        - key: realm-name-pattern
+          type: string
+          default: ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$
+        - key: alpn
+          type: array
+          default:
+            - h2
+            - http/1.1
+          items:
+            type: string
+          description: TLS ALPN 列表
+        - key: stack
+          type: string
+          default: system
+          description: 协议栈
+        - key: dns-hijack
+          type: object
+          default: {}
+          properties: []
+        - key: auto-detect-interface
+          type: boolean
+          default: false
+        - key: auto-route
+          type: boolean
+          default: false
+        - key: inet4-address
+          type: object
+          default: {}
+          properties: []
+        - key: inet6-address
+          type: object
+          default: {}
+          properties: []
+        - key: strict-route
+          type: boolean
+          default: true
+        - key: endpoint-independent-nat
+          type: boolean
+          default: false
+        - key: disable-icmp-forwarding
+          type: boolean
+          default: true
+    description: 入站监听器列表
+    default:
+      - name: socks5-in-1
+        type: socks
+        port: 10808
+      - name: http-in-1
+        type: http
+        port: 10809
+        listen: 0.0.0.0
+      - name: mixed-in-1
+        type: mixed
+        port: 10810
+        listen: 0.0.0.0
+      - name: redir-in-1
+        type: redir
+        port: 10811
+        listen: 0.0.0.0
+      - name: tproxy-in-1
+        type: tproxy
+        port: 10812
+        listen: 0.0.0.0
+      - name: shadowsocks-in-1
+        type: shadowsocks
+        port: 10813
+        listen: 0.0.0.0
+        password: vlmpIPSyHH6f4S8WVPdRIHIlzmB+GIRfoH3aNJ/t9Gg=
+        cipher: 2022-blake3-aes-256-gcm
+      - name: vmess-in-1
+        type: vmess
+        port: 10814
+        listen: 0.0.0.0
+        users:
+          - username: 1
+            uuid: 9d0cb9d0-964f-4ef6-897d-6c6b3ccf9e68
+            alterId: 1
+      - name: tuic-in-1
+        type: tuic
+        port: 10815
+        listen: 0.0.0.0
+      - name: tunnel-in-1
+        type: tunnel
+        port: 10816
+        listen: 0.0.0.0
+        network:
+          - tcp
+          - udp
+        target: target.com
+      - name: vless-in-1
+        type: vless
+        port: 10817
+        listen: 0.0.0.0
+        users:
+          - username: 1
+            uuid: 9d0cb9d0-964f-4ef6-897d-6c6b3ccf9e68
+            flow: xtls-rprx-vision
+        reality-config:
+          dest: test.com:443
+          private-key: jNXHt1yRo0vDuchQlIP6Z0ZvjT3KtzVI-T4E7RoLJS0
+          short-id:
+            - 0123456789abcdef
+          server-names:
+            - test.com
+          limit-fallback-upload:
+            after-bytes: 0
+            bytes-per-sec: 0
+            burst-bytes-per-sec: 0
+          limit-fallback-download:
+            after-bytes: 0
+            bytes-per-sec: 0
+            burst-bytes-per-sec: 0
+      - name: anytls-in-1
+        type: anytls
+        port: 10818
+        listen: 0.0.0.0
+        users:
+          username1: password1
+          username2: password2
+        certificate: ./server.crt
+        private-key: ./server.key
+      - name: mieru-in-1
+        type: mieru
+        port: 10818
+        listen: 0.0.0.0
+        transport: TCP
+        users:
+          username1: password1
+          username2: password2
+      - name: sudoku-in-1
+        type: sudoku
+        port: 8443
+        listen: 0.0.0.0
+        key: <server_key>
+        aead-method: chacha20-poly1305
+        padding-min: 1
+        padding-max: 15
+        table-type: prefer_ascii
+        handshake-timeout: 5
+        enable-pure-downlink: false
+        httpmask:
+          disable: false
+          mode: legacy
+      - name: trojan-in-1
+        type: trojan
+        port: 10819
+        listen: 0.0.0.0
+        users:
+          - username: 1
+            password: 9d0cb9d0-964f-4ef6-897d-6c6b3ccf9e68
+        certificate: ./server.crt
+        private-key: ./server.key
+      - name: hysteria2-in-1
+        type: hysteria2
+        port: 10820
+        listen: 0.0.0.0
+        users:
+          00000000-0000-0000-0000-000000000000: PASSWORD_0
+          00000000-0000-0000-0000-000000000001: PASSWORD_1
+      - name: hysteria2-realm-in-1
+        type: hysteria2-realm
+        port: 10820
+        listen: 0.0.0.0
+        token: public
+        max-realms: 65536
+        max-realms-per-ip: 4
+        trusted-proxy-header: ""
+        realm-name-pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$
+      - name: trusttunnel-in-1
+        type: trusttunnel
+        port: 10821
+        listen: 0.0.0.0
+        users:
+          - username: 1
+            password: 9d0cb9d0-964f-4ef6-897d-6c6b3ccf9e68
+        certificate: ./server.crt
+        private-key: ./server.key
+        network:
+          - tcp
+          - udp
+        congestion-controller: bbr
+      - name: tun-in-1
+        type: tun
+        stack: system
+        dns-hijack:
+          - 0.0.0.0:53
+        inet4-address:
+          - 198.19.0.1/30
+        inet6-address:
+          - fdfe:dcba:9877::1/126
+  - key: tunnels
+    type: array
+    items:
+      type: object
+      properties:
+        - key: address
+          type: string
+          default: 127.0.0.1:7777
+        - key: target
+          type: string
+          default: target.com
+          description: 转发目标
+        - key: proxy
+          type: string
+          default: proxy
+          description: 使用的代理
+    description: 端口转发隧道列表
+    default:
+      - tcp/udp,127.0.0.1:6553,114.114.114.114:53,proxy
+      - tcp,127.0.0.1:6666,rds.mysql.com:3306,vpn
+      - network:
+          - tcp
+          - udp
+        address: 127.0.0.1:7777
+        target: target.com
+        proxy: proxy
+  - key: authentication-timeout
+    type: number
+    default: 1000
+    description: 认证超时
+  - key: bbr-profile
+    type: string
+    default: ""
+  - key: certificate
+    type: string
+    default: ./server.crt
+    description: 证书
+  - key: congestion-controller
+    type: string
+    default: bbr
+    description: 拥塞控制算法
+  - key: enable
+    type: boolean
+    default: true
+    description: 是否启用
+  - key: https
+    type: string
+    description: HTTPS 相关实验配置
+    default: //baidu.com  --> rule1 --> rule2 --> sub-rule-name1(match tcp)          使用 DIRECT
+  - key: listen
+    type: string
+    default: 127.0.0.1:10443
+    description: 监听地址
+  - key: max-idle-time
+    type: number
+    default: 15000
+    description: 最大空闲时间
+  - key: max-udp-relay-packet-size
+    type: number
+    default: 1500
+    description: UDP 中继最大包长
+  - key: private-key
+    type: string
+    default: ./server.key
+    description: 私钥
+  - key: ss-config
+    type: string
+    description: Shadowsocks 默认配置片段
+    default: ss://2022-blake3-aes-256-gcm:vlmpIPSyHH6f4S8WVPdRIHIlzmB+GIRfoH3aNJ/t9Gg=@:23456
+  - key: vmess-config
+    type: string
+    description: VMess 默认配置片段
+    default: vmess://1:9d0cb9d0-964f-4ef6-897d-6c6b3ccf9e68@:12345

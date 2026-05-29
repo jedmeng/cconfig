@@ -1,0 +1,20 @@
+services:
+  cconfig:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      PORT: "8787"
+      TRUST_PROXY: "1"
+      # 持久化目录（config.yaml、state.json、sources/），默认 /config
+      CCONFIG_DATA_DIR: /config
+      CCONFIG_CONFIG_DIR: /config
+      # OIDC 默认关闭；开启后在 /config/config.yaml 中配置 oidc 段
+      # CCONFIG_OIDC_ENABLED: "true"
+      # 子路径部署时设置（构建镜像时需同步 CCONFIG_BASE_PATH build-arg）
+      # CCONFIG_BASE_PATH: /cconfig
+    volumes:
+      - cconfig-data:/config
+
+volumes:
+  cconfig-data:

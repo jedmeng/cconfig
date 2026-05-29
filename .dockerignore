@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+.git
+.cursor
+config/*
+data/*
+!data/.gitkeep
+**/*.md
+server/dist
+web/dist
+**/.env
+**/.env.*

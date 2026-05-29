@@ -1,0 +1,18 @@
+{
+  "name": "cconfig",
+  "version": "1.0.0",
+  "description": "C软件配置加工平台：配置源、修改器链式编排与订阅 URL 输出",
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:web": "npm --prefix web run dev",
+    "build": "npm --prefix server run build && npm --prefix web run build",
+    "test": "npm --prefix server run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jedmeng/cconfig.git"
+  },
+  "keywords": [],
+  "author": "jedmeng",
+  "license": "ISC"
+}

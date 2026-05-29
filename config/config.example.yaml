@@ -1,0 +1,11 @@
+# 将本文件复制为 config.yaml，并在环境变量中设置 CCONFIG_OIDC_ENABLED=true 后生效。
+oidc:
+  issuer: "https://your-idp.example.com"
+  clientId: "your-client-id"
+  clientSecret: "your-client-secret"
+  # 生产环境建议写死，须与 IdP 客户端 redirect_uris 完全一致
+  # 例: https://cconfig.example.com/api/auth/oidc/callback
+  redirectUri: ""
+  scope: "openid profile email"
+  preferredUsernameWhitelist:
+    - "admin"

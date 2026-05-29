@@ -1,0 +1,41 @@
+{
+  "name": "ccongig-server",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "sync-config-schema": "tsx scripts/sync-config-schema.ts",
+    "generate-schema": "tsx scripts/sync-config-schema.ts",
+    "apply-wiki-descriptions": "tsx scripts/apply-wiki-descriptions.ts",
+    "audit-config-schema": "tsx scripts/audit-config-schema.ts",
+    "audit-schema-descriptions": "tsx scripts/audit-config-schema.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jose": "^6.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.1",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.7",
+    "supertest": "^7.2.2",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

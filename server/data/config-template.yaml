@@ -1,0 +1,23 @@
+mixed-port: 7890
+allow-lan: true
+bind-address: '*'
+mode: rule
+log-level: info
+external-controller: '127.0.0.1:9090'
+dns:
+    enable: true
+    ipv6: false
+    default-nameserver: [system, 119.29.29.29, 223.5.5.5]
+    use-hosts: true
+    respect-rules: true
+    proxy-server-nameserver: ['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query', 119.29.29.29, 223.5.5.5]
+    nameserver: [8.8.8.8, 1.1.1.1, 119.29.29.29, 223.5.5.5]
+    fallback: ['https://dns.google/dns-query', 'https://cloudflare-dns.com/dns-query', 1.1.1.1, 8.8.8.8]
+    fallback-filter: { geoip: true, geoip-code: CN, geosite: [gfw], ipcidr: [240.0.0.0/4], domain: [+.google.com, +.facebook.com, +.youtube.com] }
+proxies:
+    - { name: 默认, type: vless, server: '', port: 1234, uuid: '', udp: true, encryption: '' }
+proxy-groups:
+    - { name: 默认, type: select, proxies: [] }
+rules:
+    - 'DOMAIN-SUFFIX,cn,DIRECT'
+    - 'GEOIP,CN,DIRECT'
