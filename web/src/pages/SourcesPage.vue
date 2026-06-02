@@ -340,7 +340,7 @@ onMounted(() => {
             <input v-model="form.url" placeholder="https://example.com/config.yaml" @blur="handleUrlBlur" />
           </div>
           <div class="form-field">
-            <div class="form-row">
+            <div class="form-row form-row--interval-head">
               <h4 class="field-title">更新周期</h4>
               <span v-if="formattedLastFetchedAt" class="hint-text hint-text--push">最后更新时间：{{ formattedLastFetchedAt }}</span>
             </div>
@@ -402,8 +402,8 @@ onMounted(() => {
 
   <Teleport to="#page-header-actions">
     <div class="page-header-actions">
-      <button class="btn-muted" @click="goBack">返回列表</button>
-      <button @click="saveCurrentSource">保存</button>
+      <button type="button" class="btn-muted" data-header-action="back" @click="goBack">返回列表</button>
+      <button type="button" data-header-action="save" @click="saveCurrentSource">保存</button>
     </div>
   </Teleport>
 </template>

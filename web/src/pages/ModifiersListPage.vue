@@ -59,13 +59,16 @@ onMounted(() => void load());
 </script>
 
 <template>
-  <div class="panel list-page-panel">
+  <div class="panel list-page-panel list-page-panel--modifiers">
     <div class="list-toolbar">
       <div class="list-count">
         <i class="bi bi-sliders"></i>
         <span>共 {{ modifiers.length }} 个修改器</span>
       </div>
-      <button @click="createModifier">新建修改器</button>
+      <button class="list-create-btn" @click="createModifier">
+        <span class="list-create-btn-full">新建修改器</span>
+        <span class="list-create-btn-short">新建</span>
+      </button>
     </div>
 
     <div v-if="loading" class="empty-wrap">
@@ -80,21 +83,27 @@ onMounted(() => void load());
     </div>
 
     <div v-else class="card-list">
-      <div v-for="item in modifiers" :key="item.id" class="card-item">
+      <div
+        v-for="item in modifiers"
+        :key="item.id"
+        class="card-item card-item--clickable"
+        @click="selectModifier(item.id)"
+      >
         <div class="card-item-main">
-          <div class="card-item-title">{{ item.name }}</div>
-          <div class="card-item-meta">
-            <span class="pill-tag">简单修改 {{ item.simpleEdits?.length ?? item.ruleEdits?.length ?? 0 }}</span>
-            <span class="pill-tag">代码片段 {{ item.codeEdits.length }}</span>
-            <span
-              v-if="item.classCodeEnabled === true || (item.classCodeEnabled !== false && item.classCode?.trim())"
-              class="pill-tag"
-            >
-              代码修改器已启用
-            </span>
+          <div class="card-item-title-row">
+            <div class="card-item-title">{{ item.name }}</div>
+            <div class="card-item-tags">
+              <span class="pill-tag">简单修改 {{ item.simpleEdits?.length ?? item.ruleEdits?.length ?? 0 }}</span>
+              <span
+                v-if="item.classCodeEnabled === true || (item.classCodeEnabled !== false && item.classCode?.trim())"
+                class="pill-tag"
+              >
+                代码修改
+              </span>
+            </div>
           </div>
         </div>
-        <div class="card-actions">
+        <div class="card-actions" @click.stop>
           <button @click="selectModifier(item.id)">编辑</button>
           <button class="btn-danger" @click="removeModifier(item.id)">删除</button>
         </div>

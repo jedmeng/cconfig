@@ -71,13 +71,16 @@ onMounted(() => void load());
 </script>
 
 <template>
-  <div class="panel list-page-panel">
+  <div class="panel list-page-panel list-page-panel--schemes">
     <div class="list-toolbar">
       <div class="list-count">
         <i class="bi bi-diagram-3"></i>
         <span>共 {{ schemes.length }} 个配置方案</span>
       </div>
-      <button @click="createScheme">新建配置方案</button>
+      <button class="list-create-btn" @click="createScheme">
+        <span class="list-create-btn-full">新建配置方案</span>
+        <span class="list-create-btn-short">新建</span>
+      </button>
     </div>
 
     <div v-if="loading" class="empty-wrap">
@@ -92,7 +95,12 @@ onMounted(() => void load());
     </div>
 
     <div v-else class="card-list">
-      <div v-for="scheme in schemes" :key="scheme.id" class="card-item">
+      <div
+        v-for="scheme in schemes"
+        :key="scheme.id"
+        class="card-item card-item--clickable"
+        @click="selectScheme(scheme.id)"
+      >
         <div class="card-item-main">
           <div class="card-item-title">{{ scheme.name }}</div>
           <div class="card-item-meta">
@@ -100,10 +108,12 @@ onMounted(() => void load());
             <span>关联修改器：{{ scheme.modifierIds.length }}</span>
           </div>
         </div>
-        <div class="card-actions">
-          <button class="btn-ghost" @click="copyLink(scheme.id)">复制链接</button>
-          <button @click="selectScheme(scheme.id)">编辑</button>
-          <button class="btn-danger" @click="removeScheme(scheme.id)">删除</button>
+        <div class="card-actions card-actions--scheme" @click.stop>
+          <button class="btn-ghost card-actions-copy" @click="copyLink(scheme.id)">复制链接</button>
+          <div class="card-actions-row">
+            <button @click="selectScheme(scheme.id)">编辑</button>
+            <button class="btn-danger" @click="removeScheme(scheme.id)">删除</button>
+          </div>
         </div>
       </div>
     </div>

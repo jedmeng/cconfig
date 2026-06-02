@@ -61,13 +61,16 @@ onMounted(() => void load());
 </script>
 
 <template>
-  <div class="panel list-page-panel">
+  <div class="panel list-page-panel list-page-panel--sources">
     <div class="list-toolbar">
       <div class="list-count">
         <i class="bi bi-hdd-stack"></i>
         <span>共 {{ sources.length }} 个配置源</span>
       </div>
-      <button @click="createSource">新建配置源</button>
+      <button class="list-create-btn" @click="createSource">
+        <span class="list-create-btn-full">新建配置源</span>
+        <span class="list-create-btn-short">新建</span>
+      </button>
     </div>
 
     <div v-if="loading" class="empty-wrap">
@@ -82,15 +85,24 @@ onMounted(() => void load());
     </div>
 
     <div v-else class="card-list">
-      <div v-for="source in sources" :key="source.id" class="card-item">
+      <div
+        v-for="source in sources"
+        :key="source.id"
+        class="card-item card-item--clickable"
+        @click="selectSource(source.id)"
+      >
         <div class="card-item-main">
-          <div class="card-item-title">{{ source.name }}</div>
+          <div class="card-item-title-row">
+            <div class="card-item-title">{{ source.name }}</div>
+            <div class="card-item-tags">
+              <span class="pill-tag pill-tag--muted">{{ kindLabel(source.kind) }}</span>
+            </div>
+          </div>
           <div class="card-item-meta">
-            <span class="pill-tag pill-tag--muted">{{ kindLabel(source.kind) }}</span>
             <span>最后更新时间：{{ formatDateTime(source.lastFetchedAt) }}</span>
           </div>
         </div>
-        <div class="card-actions">
+        <div class="card-actions" @click.stop>
           <button @click="selectSource(source.id)">编辑</button>
           <button class="btn-danger" @click="removeSource(source)">删除</button>
         </div>

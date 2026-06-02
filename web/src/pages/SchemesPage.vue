@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { api } from "../api";
 import { apiUrl } from "../api-base";
 import { showToast } from "../composables/toast";
+import { useFlowTrackCardWidth } from "../composables/useFlowTrackCardWidth";
 import CodeEditorMonaco from "../components/CodeEditorMonaco.vue";
 
 type Source = { id: string; name: string };
@@ -45,6 +46,10 @@ const flowCards = computed<FlowCard[]>(() => {
   return cards;
 });
 
+const flowTrackRef = ref<HTMLElement | null>(null);
+const flowCardCount = computed(() => flowCards.value.length);
+const { trackStyle: flowTrackStyle } = useFlowTrackCardWidth(flowTrackRef, flowCardCount);
+
 const outputUrl = computed(() => {
   if (!selectedScheme.value) return "";
   return new URL(apiUrl(`/api/output/${selectedScheme.value.id}.yaml`), window.location.origin).href;
@@ -67,6 +72,7 @@ async function load() {
   if (!form.value.sourceId && sources.value[0]) form.value.sourceId = sources.value[0].id;
   if (selectedScheme.value) syncFromScheme(selectedScheme.value);
   await fetchPreview();
+  selectOutputCard();
 }
 
 function syncFromScheme(scheme: Scheme) {
@@ -108,6 +114,14 @@ async function fetchPreview() {
   } finally {
     isPreviewing.value = false;
   }
+}
+
+function outputCardIndex() {
+  return Math.max(0, flowCards.value.length - 1);
+}
+
+function selectOutputCard() {
+  selectedCardIndex.value = outputCardIndex();
 }
 
 function selectCard(index: number) {
@@ -186,10 +200,10 @@ async function copyOutputUrl() {
 
 watch(
   () => props.schemeId,
-  () => {
+  async () => {
     if (selectedScheme.value) syncFromScheme(selectedScheme.value);
-    selectedCardIndex.value = 0;
-    void fetchPreview();
+    await fetchPreview();
+    selectOutputCard();
   },
 );
 
@@ -219,7 +233,7 @@ onMounted(() => void load());
     <div class="form-field">
       <h4 class="field-title">修改链路</h4>
       <section class="flow-section">
-      <div class="flow-track">
+      <div ref="flowTrackRef" class="flow-track flow-track--responsive" :style="flowTrackStyle">
         <template v-for="(card, cardIndex) in flowCards" :key="`${card.kind}-${cardIndex}`">
           <div v-if="cardIndex > 0" class="flow-arrow" aria-hidden="true">
             <i class="bi bi-arrow-right"></i>
@@ -301,9 +315,15 @@ onMounted(() => void load());
 
   <Teleport to="#page-header-actions">
     <div class="page-header-actions">
-      <button class="btn-muted" @click="emit('back')">返回列表</button>
-      <button :class="{ submitting: isSaving }" :disabled="isSaving" @click="saveScheme">
-        {{ isSaving ? "保存中..." : "保存方案" }}
+      <button type="button" class="btn-muted" data-header-action="back" @click="emit('back')">返回列表</button>
+      <button
+        type="button"
+        data-header-action="save"
+        :class="{ submitting: isSaving }"
+        :disabled="isSaving"
+        @click="saveScheme"
+      >
+        {{ isSaving ? "保存中..." : "保存" }}
       </button>
     </div>
   </Teleport>

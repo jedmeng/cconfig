@@ -210,7 +210,7 @@ onMounted(() => void load());
     <template v-else>
       <div class="editor-body editor-body--stack">
         <div class="editor-toolbar">
-          <div class="name-field">
+          <div class="name-field form-field">
             <h4 class="field-title">名称</h4>
             <input v-model="form.name" />
           </div>
@@ -319,8 +319,14 @@ onMounted(() => void load());
 
   <Teleport v-if="editorState === 'ready'" to="#page-header-actions">
     <div class="page-header-actions">
-      <button class="btn-muted" @click="emit('back')">返回列表</button>
-      <button :class="{ submitting: isSaving }" :disabled="isSaving" @click="saveModifier">
+      <button type="button" class="btn-muted" data-header-action="back" @click="emit('back')">返回列表</button>
+      <button
+        type="button"
+        data-header-action="save"
+        :class="{ submitting: isSaving }"
+        :disabled="isSaving"
+        @click="saveModifier"
+      >
         {{ isSaving ? "保存中..." : "保存" }}
       </button>
     </div>
