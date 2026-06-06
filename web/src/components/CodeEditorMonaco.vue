@@ -49,6 +49,7 @@ let viewportSyncRaf = 0;
 const shellClasses = computed(() => ({
   "monaco-shell--layout-mobile": mobileLayout.value,
   "monaco-shell--layout-desktop": !mobileLayout.value,
+  "monaco-shell--readonly": props.readonly,
 }));
 
 const hostStyle = shallowRef({
@@ -150,6 +151,19 @@ function scheduleDiagnosticHint() {
   });
 }
 
+function readonlyEditorOptions(readonly: boolean): monaco.editor.IEditorOptions {
+  if (!readonly) {
+    return { readOnly: false, domReadOnly: false };
+  }
+  return {
+    readOnly: true,
+    domReadOnly: true,
+    renderLineHighlight: "none",
+    selectionHighlight: false,
+    occurrencesHighlight: "off",
+  };
+}
+
 function mobileEditorOptions(enabled: boolean): monaco.editor.IEditorOptions {
   if (enabled) {
     return {
@@ -228,7 +242,9 @@ function setupTouchScrollChain() {
   teardownTouchScrollChain();
   if (!mobileLayout.value || !editor || !root.value) return;
 
-  const bindTargets = [root.value, editor.getDomNode()].filter(Boolean) as HTMLElement[];
+  const bindTargets = (
+    props.readonly ? [root.value] : [root.value, editor.getDomNode()]
+  ).filter(Boolean) as HTMLElement[];
   let lastY = 0;
   let tracking = false;
   let scrollParent: HTMLElement | null = null;
@@ -389,7 +405,7 @@ onMounted(() => {
   editor = monaco.editor.create(root.value, {
     model,
     minimap: { enabled: false },
-    readOnly: props.readonly,
+    ...readonlyEditorOptions(props.readonly),
     fixedOverflowWidgets: true,
     hover: { enabled: true, delay: 200 },
     quickSuggestions: false,
@@ -432,7 +448,7 @@ watch(
 watch(
   () => props.readonly,
   (value) => {
-    editor?.updateOptions({ readOnly: value ?? false });
+    editor?.updateOptions(readonlyEditorOptions(value ?? false));
     if (mobileLayout.value) setupTouchScrollChain();
   },
 );
@@ -515,6 +531,35 @@ onBeforeUnmount(() => {
 
 .monaco-shell--layout-mobile :deep(.monaco-editor .monaco-scrollable-element) {
   left: 0 !important;
+}
+
+/* 只读 + 移动端：伪元素遮罩拦截 touch，避免 focus 弹键盘 */
+.monaco-shell--readonly.monaco-shell--layout-mobile .monaco-host {
+  position: relative;
+}
+
+.monaco-shell--readonly.monaco-shell--layout-mobile .monaco-host::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.monaco-shell--readonly.monaco-shell--layout-mobile :deep(.monaco-editor),
+.monaco-shell--readonly.monaco-shell--layout-mobile :deep(.monaco-editor *) {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.monaco-shell--readonly :deep(.cursors-layer) {
+  display: none !important;
+}
+
+.monaco-shell--readonly :deep(textarea.inputarea:read-only) {
+  caret-color: transparent;
 }
 
 .diagnostic-hint {
